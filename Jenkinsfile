@@ -3,17 +3,24 @@ pipeline {
 
     stages {
 
-        stage('Install Dependencies') {
+        stage('Install Python') {
             steps {
                 sh '''
-                pip install -r requirements.txt
+                apt-get update
+                apt-get install -y python3 python3-pip
                 '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'pip3 install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'pytest'
+                sh 'python3 -m pytest'
             }
         }
 
