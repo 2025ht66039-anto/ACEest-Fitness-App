@@ -352,8 +352,23 @@ class ACEestApp:
 @web_app.route("/")
 def home():
     return "ACEest Fitness DevOps Application Running"
+
+import os
+from flask import Flask
+
+web_app = Flask(__name__)
+
+@web_app.route("/")
+def home():
+    return "ACEest Fitness DevOps Application Running"
+
 if __name__ == "__main__":
     init_db()
-    root = tk.Tk()
-    app = ACEestApp(root)
-    root.mainloop()
+
+    # Check if running inside Docker
+    if os.environ.get("DOCKER_ENV") == "true":
+        web_app.run(host="0.0.0.0", port=5000)
+    else:
+        root = tk.Tk()
+        app = ACEestApp(root)
+        root.mainloop()
