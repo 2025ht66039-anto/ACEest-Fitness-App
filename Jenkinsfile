@@ -3,15 +3,11 @@ pipeline {
 
     stages {
 
-        stage('Clone Repository') {
-            steps {
-                git 'https://github.com/2025ht66039-anto/ACEest-Fitness-App.git'
-            }
-        }
-
         stage('Install Dependencies') {
             steps {
-                sh 'pip install -r requirements.txt'
+                sh '''
+                pip install -r requirements.txt
+                '''
             }
         }
 
