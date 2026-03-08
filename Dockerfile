@@ -17,3 +17,10 @@ EXPOSE 5000
 ENV DOCKER_ENV=true
 
 CMD ["python", "app.py"]
+
+
+
+RUN pip install gunicorn
+
+EXPOSE 5000
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
