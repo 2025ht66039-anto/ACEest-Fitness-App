@@ -16,11 +16,7 @@ pipeline {
         }
 
         stage('Run Docker Container') {
-            steps {
-                sh 'docker run -d -p 3000:5000 --name aceest-fitness aceest-fitness-app'
-            }
-        }
-
+    steps {
+        sh 'docker run -d -p 3000:5000 --name aceest-fitness aceest-fitness-app'
     }
 }
-
