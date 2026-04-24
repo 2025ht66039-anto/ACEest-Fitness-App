@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-green
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aceest-fitness
+      track: green
+  template:
+    metadata:
+      labels:
+        app: aceest-fitness
+        track: green
+    spec:
+      containers:
+        - name: aceest-fitness
+          image: 2025ht66039/aceest-fitness-app:v2
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5

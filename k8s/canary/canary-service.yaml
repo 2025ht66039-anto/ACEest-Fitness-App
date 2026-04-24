@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-canary-service
+spec:
+  type: ClusterIP
+  selector:
+    app: aceest-fitness
+    track: canary
+  ports:
+    - port: 80
+      targetPort: 5000

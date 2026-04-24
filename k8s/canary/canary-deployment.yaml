@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-fitness
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: aceest-fitness
+        track: canary
+    spec:
+      containers:
+        - name: aceest-fitness
+          image: 2025ht66039/aceest-fitness-app:v3
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
