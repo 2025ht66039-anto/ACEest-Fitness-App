@@ -12,7 +12,6 @@ pipeline {
     environment {
         IMAGE_NAME = "2025ht66039/aceest-fitness-app"
         IMAGE_TAG  = "v${BUILD_NUMBER}"
-        K8S_NAMESPACE = "default"
     }
 
     stages {
@@ -25,11 +24,15 @@ pipeline {
         stage('Run Unit Tests') {
             steps {
                 sh '''
-                    python -m venv venv
-                    . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                    pytest -v --cov=. --cov-report=xml
+                    docker run --rm \
+                      -v "$WORKSPACE":/app \
+                      -w /app \
+                      python:3.11-slim \
+                      sh -c "
+                        python -m pip install --upgrade pip &&
+                        pip install -r requirements.txt pytest pytest-cov &&
+                        pytest -v --cov=. --cov-report=xml --junitxml=test-results.xml
+                      "
                 '''
             }
         }
@@ -37,13 +40,22 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQubeServer') {
-                    sh '''
-                        sonar-scanner \
-                          -Dsonar.projectKey=aceest-fitness-app \
-                          -Dsonar.sources=. \
-                          -Dsonar.tests=tests \
-                          -Dsonar.python.coverage.reportPaths=coverage.xml
-                    '''
+                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            docker run --rm \
+                              -e SONAR_HOST_URL="$SONAR_HOST_URL" \
+                              -e SONAR_TOKEN="$SONAR_TOKEN" \
+                              -v "$WORKSPACE":/usr/src \
+                              -w /usr/src \
+                              sonarsource/sonar-scanner-cli:latest \
+                              -Dsonar.projectKey=aceest-fitness-app \
+                              -Dsonar.projectName="ACEest Fitness App" \
+                              -Dsonar.sources=. \
+                              -Dsonar.tests=tests \
+                              -Dsonar.exclusions=venv/**,__pycache__/**,.pytest_cache/**,.git/**,k8s/**,versions/**,docker-compose/**,templates/** \
+                              -Dsonar.python.coverage.reportPaths=coverage.xml
+                        '''
+                    }
                 }
             }
         }
@@ -73,32 +85,28 @@ pipeline {
             steps {
                 script {
                     if (params.DEPLOY_STRATEGY == 'rolling') {
-                        sh """
+                        sh '''
                             kubectl apply -f k8s/rolling/
-                            kubectl set image deployment/aceest-fitness aceest-fitness=${IMAGE_NAME}:${IMAGE_TAG}
+                            kubectl set image deployment/aceest-fitness aceest-fitness=$IMAGE_NAME:$IMAGE_TAG
                             kubectl rollout status deployment/aceest-fitness
-                        """
-                    }
-
-                    if (params.DEPLOY_STRATEGY == 'blue-green') {
-                        sh """
+                        '''
+                    } else if (params.DEPLOY_STRATEGY == 'blue-green') {
+                        sh '''
                             kubectl apply -f k8s/blue-green/blue-deployment.yaml
                             kubectl apply -f k8s/blue-green/service.yaml
                             kubectl apply -f k8s/blue-green/green-deployment.yaml
+                            kubectl rollout status deployment/aceest-blue
                             kubectl rollout status deployment/aceest-green
-                            kubectl patch service aceest-bg-service -p '{"spec":{"selector":{"app":"aceest-fitness","track":"green"}}}'
-                        """
-                    }
-
-                    if (params.DEPLOY_STRATEGY == 'canary') {
-                        sh """
+                        '''
+                    } else if (params.DEPLOY_STRATEGY == 'canary') {
+                        sh '''
                             kubectl apply -f k8s/canary/stable-deployment.yaml
                             kubectl apply -f k8s/canary/stable-service.yaml
                             kubectl apply -f k8s/canary/ingress-stable.yaml
                             kubectl apply -f k8s/canary/canary-deployment.yaml
                             kubectl apply -f k8s/canary/canary-service.yaml
                             kubectl apply -f k8s/canary/ingress-canary.yaml
-                        """
+                        '''
                     }
                 }
             }
@@ -107,6 +115,8 @@ pipeline {
 
     post {
         always {
+            junit allowEmptyResults: true, testResults: 'test-results.xml'
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'coverage.xml, test-results.xml'
             echo 'Pipeline finished'
         }
         success {
