@@ -2,7 +2,6 @@ FROM jenkins/jenkins:lts
 
 USER root
 
-# Install Docker CLI (client)
 RUN apt-get update && apt-get install -y ca-certificates curl gnupg \
  && install -m 0755 -d /etc/apt/keyrings \
  && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
