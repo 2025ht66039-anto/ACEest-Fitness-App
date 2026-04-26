@@ -18,12 +18,14 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Create Virtualenv and Install Dependencies') {
             steps {
                 sh '''
                     python3 --version
-                    python3 -m pip install --user --upgrade pip
-                    python3 -m pip install --user -r requirements.txt pytest pytest-cov
+                    python3 -m venv .venv
+                    . .venv/bin/activate
+                    python -m pip install --upgrade pip
+                    pip install -r requirements.txt pytest pytest-cov
                 '''
             }
         }
@@ -31,7 +33,8 @@ pipeline {
         stage('Run Unit Tests') {
             steps {
                 sh '''
-                    python3 -m pytest -v --cov=. --cov-report=xml --junitxml=test-results.xml
+                    . .venv/bin/activate
+                    python -m pytest -v --cov=. --cov-report=xml --junitxml=test-results.xml
                 '''
             }
         }
@@ -41,8 +44,6 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
                         docker run --rm \
-                          -e SONAR_HOST_URL="$SONAR_HOST_URL" \
-                          -e SONAR_TOKEN="$SONAR_AUTH_TOKEN" \
                           -v "$WORKSPACE:/usr/src" \
                           -w /usr/src \
                           sonarsource/sonar-scanner-cli:latest \
