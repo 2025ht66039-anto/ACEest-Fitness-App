@@ -12,12 +12,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Create Virtualenv and Install Dependencies') {
             steps {
                 sh '''
@@ -57,14 +51,9 @@ pipeline {
 
     post {
         always {
-            script {
-                if (fileExists('test-results.xml')) {
-                    junit 'test-results.xml'
-                } else {
-                    echo 'No test-results.xml found, skipping junit publish.'
-                }
-            }
+            junit testResults: 'test-results.xml', allowEmptyResults: true
             archiveArtifacts artifacts: 'coverage.xml,test-results.xml', allowEmptyArchive: true
+            cleanWs()
         }
     }
 }
