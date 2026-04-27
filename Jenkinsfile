@@ -46,12 +46,12 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
                         docker run --rm \
-                          -v "$WORKSPACE:/usr/src" \
-                          -w /usr/src \
+                          --volumes-from jenkins \
+                          -w /var/jenkins_home/workspace/ACEestFitnessApp \
                           sonarsource/sonar-scanner-cli:latest \
                           -Dsonar.projectKey=aceest-fitness-app \
                           -Dsonar.projectName="ACEest Fitness App" \
-                          -Dsonar.projectBaseDir=/usr/src \
+                          -Dsonar.projectBaseDir=/var/jenkins_home/workspace/ACEestFitnessApp \
                           -Dsonar.sources=. \
                           -Dsonar.tests=tests \
                           -Dsonar.exclusions=venv/**,__pycache__/**,.pytest_cache/**,.git/**,k8s/**,versions/**,docker-compose/**,templates/**,*.db \
