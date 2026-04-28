@@ -59,7 +59,7 @@ pipeline {
                               -Dsonar.coverage.exclusions=tests/** \
                               -Dsonar.python.coverage.reportPaths=coverage.xml \
                               -Dsonar.host.url="$SONAR_HOST_URL" \
-                              -Dsonar.token="$SONAR_TOKEN"
+                              -Dsonar.login="$SONAR_TOKEN"
                         '''
                     }
                 }
