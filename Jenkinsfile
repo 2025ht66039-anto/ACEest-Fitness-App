@@ -44,22 +44,24 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        docker run --rm \
-                          --volumes-from jenkins \
-                          -w /var/jenkins_home/workspace/ACEestFitnessApp \
-                          sonarsource/sonar-scanner-cli:latest \
-                          -Dsonar.projectKey=aceest-fitness-app \
-                          -Dsonar.projectName="ACEest Fitness App" \
-                          -Dsonar.projectBaseDir=/var/jenkins_home/workspace/ACEestFitnessApp \
-                          -Dsonar.sources=. \
-                          -Dsonar.tests=tests \
-                          -Dsonar.exclusions=venv/**,__pycache__/**,.pytest_cache/**,.git/**,k8s/**,versions/**,docker-compose/**,templates/**,*.db \
-                          -Dsonar.coverage.exclusions=tests/** \
-                          -Dsonar.python.coverage.reportPaths=coverage.xml \
-                          -Dsonar.host.url="$SONAR_HOST_URL" \
-                          -Dsonar.login="$SONAR_AUTH_TOKEN"
-                    '''
+                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            docker run --rm \
+                              --volumes-from jenkins \
+                              -w /var/jenkins_home/workspace/ACEestFitnessApp \
+                              sonarsource/sonar-scanner-cli:latest \
+                              -Dsonar.projectKey=aceest-fitness-app \
+                              -Dsonar.projectName="ACEest Fitness App" \
+                              -Dsonar.projectBaseDir=/var/jenkins_home/workspace/ACEestFitnessApp \
+                              -Dsonar.sources=. \
+                              -Dsonar.tests=tests \
+                              -Dsonar.exclusions=venv/**,__pycache__/**,.pytest_cache/**,.git/**,k8s/**,versions/**,docker-compose/**,templates/**,*.db \
+                              -Dsonar.coverage.exclusions=tests/** \
+                              -Dsonar.python.coverage.reportPaths=coverage.xml \
+                              -Dsonar.host.url="$SONAR_HOST_URL" \
+                              -Dsonar.token="$SONAR_TOKEN"
+                        '''
+                    }
                 }
             }
         }
